@@ -51,14 +51,50 @@ class n2gdrive(object):
         folder.Upload()
         return folder
 
-    def create_file(self, title, mimeType=None, parents=None):
+    def create_file(self, title, mimeType=None, parents=None, content=None):
         metadata = {'title': str(title),
                     'mimeType': MimeTypeIdentifier(mimeType).mimeType
                     }
         if parents is not None: metadata['parents'] = [{"kind": "drive#fileLink", "id": str(parents)}]
         file = self.drive.CreateFile(metadata)
+        if content is not None:
+            file.SetContentFile(filename=content)
         file.Upload()
         return file
+
+    def upload_local_file(self, filepath, id=None):
+        f = self.file(id=id)
+        f.SetContentFile(filename=filepath)
+        f.Upload()
+        return
+
+    def exists(self, title=None, parents=None, trashed=False, q=None):
+        # Check input Values
+        # -------------------
+        if title and q is None:
+            print('==============================='
+                  '      -- Invalid Input --'
+                  ' Both "title" and "q" are None'
+                  '===============================')
+            return
+        # search by q
+        # -----------
+        if q is not None:
+            msg = q
+            flist = self.search(msg=msg)
+            if not flist: exists = False
+            else: exists = True
+            return exists
+        # search by title and parents
+        # ---------------------------
+        if parents is None:
+            msg = "title = '{}' and trashed={}".format(title, trashed)
+        else:
+            msg = "title = '{}' and '{}' in parents and trashed={}".format(title, parents, trashed)
+        flist = self.search(msg=msg)
+        if not flist: exists = False
+        else: exists = True
+        return exists
 
 
 class MimeTypeIdentifier(object):
@@ -116,15 +152,13 @@ class MimeTypeIdentifier(object):
         else: key = mimeType
         return key
 
+def Authorize():
+    drive = n2gdrive()
+    return drive
+
 
 # History
 # -------
 # 2017/11/30 written by T.Inaba
-
-
-
-
-
-
-
-
+# 2017/12/02 T.Inaba : Add "upload_local_file" method.
+# 2017/12/04 T.Inaba: ver.0.1.1

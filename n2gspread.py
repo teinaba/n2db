@@ -3,7 +3,6 @@
 # import modules
 # --------------
 import gspread
-from oauth2client.client import flow_from_clientsecrets
 from oauth2client.file import Storage
 import numpy
 
@@ -80,7 +79,7 @@ class n2gspread(object):
 
     def blank_check(self, wks):
         """
-        Check wheather the worksheet is blank file or not.
+        Check whether the worksheet is blank file or not.
         --------------------------------------------------
 
         :param wks: < gspread.worksheet class instance >
@@ -118,3 +117,12 @@ class n2gspread(object):
         return
 
 
+def Authorize(json):
+    gs = n2gspread(json=json)
+    return gs
+
+
+# History
+# -------
+# 2017/11/30 written by T.Inaba
+# 2017/12/04 T.Inaba: ver.0.1.1
