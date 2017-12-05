@@ -2,9 +2,15 @@
 
 # import modules
 # --------------
-from . import n2gdrive
+import os
+import n2db
+import n2gdrive
 
-drive = n2gdrive.n2gdrive()
+
+drive = n2gdrive.Authorize()
+db = n2db.n2db()
+db.authorize(json='credentials_n2db.json')
+
 
 # Functions
 # ---------
@@ -64,12 +70,63 @@ def mkdir_gene(geneID):
 
 # Main
 # ----
-rootID = mkdir_root()
-monID = mkdir_monitor(rootID=rootID)
-rxID, teleID, geneID = mkdir_pjt(monID=monID)
-mkdir_rx(rxID=rxID)
-mkdir_tele(teleID=teleID)
-mkdir_gene(geneID=geneID)
+def run():
+    # creat database directory @drive --
+    rootID = mkdir_root()
+    print('\nCREATE FOLDER @Drive: NECST_FILE_IO\n'
+          '    ID: {}\n'.format(rootID))
+    monID = mkdir_monitor(rootID=rootID)
+    print('\nCREATE FOLDER @Drive: Monitor\n'
+          '    ID: {}\n'.format(monID))
+
+    # create config directory @local --
+    scriptname = os.path.dirname(os.path.abspath(__name__))
+    cnfpath = os.path.normpath(os.path.join(scriptname, 'config'))
+    try :
+        os.mkdir(cnfpath)
+    except:
+        FileExistsError
+    print('\nMKDIR @Local: config directory\n'
+          '    PATH: {}\n'.format(cnfpath))
+
+    # create database config @local --
+    dbcnf = n2db.ConfigManager().create_db_cnf(cnfpath=cnfpath, rootID=monID)
+    print('\nCREATE FILE @Local: DataBase config\n'
+          '    FILE: {}\n'.format(dbcnf))
+    # -- upload to drive
+    d_dbcnf = drive.create_file(title='n2db.cnf', mimeType='txt', parents=monID, content=dbcnf)
+    print('\nUPLOAD FILE @Drive: DataBase config\n'
+          '    Parents: {}\n'
+          '    FOLDER ID: {}\n'.format(d_dbcnf['parents'][0]['id'], d_dbcnf['id']))
+    # -- add config-ID to config file
+    n2db.ConfigManager().write_value(file=dbcnf, section='Info', key='cnfid', value=d_dbcnf['id'])
+    drive.upload_local_file(filepath=dbcnf, id=d_dbcnf['id'])
+
+    # create project --
+    # -- NASCORX
+    pjtcnf = db.CREATE_PROJECT(pjt='NASCORX')
+    print('\nCREATE PROJECT: {}\n'
+          '    FOLDER ID: {}\n'.format(pjtcnf['title'], pjtcnf['id']))
+    tblcnf = db.CREATE_TABLE(pjt='NASCORX', table='SIS', description='THIS-is-Test-Program')
+    print('\nCREATE TABLE: {}\n'
+          '    FOLDER ID: {}\n'.format(tblcnf['title'], tblcnf['id']))
+    # -- Telescope
+    pjtcnf2 = db.CREATE_PROJECT(pjt='Telescope')
+    print('\nCREATE PROJECT: {}\n'
+          '    FOLDER ID: {}'.format(pjtcnf2['title'], pjtcnf2['id']))
+    tblcnf2 = db.CREATE_TABLE(pjt='Telescope', table='AzEl', description='AzEl')
+    print('\nCREATE TABLE: {}\n'
+          '    FOLDER ID: {}\n'.format(tblcnf2['title'], tblcnf2['id']))
+
+    # create year direcrory --
+
+
+    print('\n\n-- FINISH INSTALL --')
+    return
+
+
+if __name__ == '__main__':
+    run()
 
 
 # History

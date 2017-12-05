@@ -42,10 +42,11 @@ class n2gdrive(object):
         file.Delete()
         return
 
-    def create_folder(self, title=None, parents=None):
+    def create_folder(self, title, parents=None):
         mimeType = MimeTypeIdentifier('folder').mimeType
-        metadata = {'mimeType': mimeType}
-        if title is not None: metadata['title'] = str(title)
+        metadata = {'mimeType': mimeType,
+                    'title': title
+                    }
         if parents is not None: metadata['parents'] = [{"kind": "drive#fileLink", "id": str(parents)}]
         folder = self.drive.CreateFile(metadata)
         folder.Upload()
@@ -69,31 +70,32 @@ class n2gdrive(object):
         return
 
     def exists(self, title=None, parents=None, trashed=False, q=None):
-        # Check input Values
-        # -------------------
-        if title and q is None:
-            print('==============================='
-                  '      -- Invalid Input --'
-                  ' Both "title" and "q" are None'
-                  '===============================')
+        # Check input Values --
+        if title is None and q is None:
+            print('===============================\n'
+                  '      -- Invalid Input --\n'
+                  ' Both "title" and "q" are None\n'
+                  '===============================\n')
             return
-        # search by q
-        # -----------
+
+        # search by q --
         if q is not None:
             msg = q
             flist = self.search(msg=msg)
-            if not flist: exists = False
+            if not flist:exists = False
             else: exists = True
             return exists
-        # search by title and parents
-        # ---------------------------
+
+        # search by title and parents --
         if parents is None:
             msg = "title = '{}' and trashed={}".format(title, trashed)
         else:
             msg = "title = '{}' and '{}' in parents and trashed={}".format(title, parents, trashed)
         flist = self.search(msg=msg)
-        if not flist: exists = False
-        else: exists = True
+
+        # check result --
+        if flist: exists = True
+        else: exists = False
         return exists
 
 
@@ -136,19 +138,19 @@ class MimeTypeIdentifier(object):
                 }
 
     def __init__(self, mimeType):
-        self.mimeTypes = self.identify(mimeType)
+        self.identify(mimeType=mimeType)
         pass
 
     def identify(self, mimeType):
         key = self.interpreter(mimeType)
-        ret = self.mimeTypes[key]
-        return ret
+        self.mimeType = self.mimeTypes[key]
+        return self.mimeType
 
     def interpreter(self, mimeType):
         if mimeType is None: key = 'txt'
-        elif 'sheet' or 'spread' in mimeType: key = 'sheet'
+        elif 'sheet' in mimeType or 'spread' in mimeType: key = 'sheet'
         elif 'doc' in mimeType: key = 'doc'
-        elif 'txt' or 'text' in mimeType: key = 'txt'
+        elif 'txt' in mimeType or 'text' in mimeType: key = 'txt'
         else: key = mimeType
         return key
 

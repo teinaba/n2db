@@ -2,9 +2,10 @@
 
 # import modules
 # --------------
-from . import n2gdrive
-from . import n2gspread
+import n2gdrive
+import n2gspread
 import os
+import time
 import numpy
 import pandas
 import configparser
@@ -38,19 +39,26 @@ class n2db(object):
         self.cnfpath = os.path.normpath(joined)
         return
 
-    def INSERT(self, table, timestamp, data, wks_num=1):
+    def INSERT(self, pjt, table, data, wks_num=1):
         # data type check --
-        if type(data) == numpy.ndarray: pass
-        elif type(data) == list: data = numpy.array(data)
+        if type(data) == numpy.ndarray:
+            darr = data
+            dlist = data.tolist()
+            pass
+        elif type(data) == list:
+            darr = numpy.array(data)
+            dlist = data
+        else: raise TypeError('\n\nExpected Type : "numpy.ndarray" or "list"\n')
 
         # get date list --
-        index = data[:, 0]
-        datelist = IndexManager().get_datelist(index=index)
+        index = darr[:, 0]
+        datelist, dtindex = IndexManager().get_datelist(index=index)
 
         # upload data by date --
-        s = pandas.Series(data=data, index=index)
+        s = pandas.Series(data=dlist, index=dtindex)
         for date in datelist:
-            self.insert(table=table, date=date, data=s[date], wks_num=wks_num)
+            d = list(s[date])  # pandas.Series is not recognized as list(array).
+            self.insert(pjt=pjt, table=table, date=date, data=d, wks_num=wks_num)
         pass
 
     def SELECT(self, table):
@@ -59,7 +67,7 @@ class n2db(object):
     def CREATE_PROJECT(self, pjt):
         # set path and create project directory in drive --
         dbcnf = os.path.join(self.cnfpath, 'n2db.cnf')
-        rootID = ConfigManager().get_value(file=dbcnf, section='Info', key='rootID')
+        rootID = ConfigManager().get_value(file=dbcnf, section='Info', key='rootid')
         pjtdir = self.drive.create_folder(title=pjt, parents=rootID)
 
         # add Project name to n2db.cnf --
@@ -70,6 +78,9 @@ class n2db(object):
         # create Project info in n2db.cnf --
         dic = {'id': pjtdir['id']}
         ConfigManager().write_section(file=dbcnf, section=pjt, dic=dic)
+        dbcnfID = ConfigManager().get_value(file=dbcnf, section='Info', key='cnfid')
+        # -- upload
+        self.drive.upload_local_file(filepath=dbcnf, id=dbcnfID)
 
         # create Project config file --
         info = {'cnfid': '', 'project': pjt, 'pjtid': pjtdir['id']}
@@ -77,23 +88,30 @@ class n2db(object):
         pjtcnf = ConfigManager().create_pjt_cnf(cnfpath=self.cnfpath, pjt=pjt, info=info)
         # -- upload to drive
         d_pjtcnf = self.drive.create_file(title=pjt+'.cnf', mimeType='txt', parents=rootID, content=pjtcnf)
+        # -- add config-ID to local config
         ConfigManager().write_value(file=pjtcnf, section='Info', key='cnfid', value=d_pjtcnf['id'])
-        return
+        # -- re-upload
+        self.drive.upload_local_file(filepath=pjtcnf, id=d_pjtcnf['id'])
+        return d_pjtcnf
 
     def CREATE_TABLE(self, pjt, table, description=''):
-        # set path and create table directory in drive --
-        pjtcnf = os.path.join(self.cnfpath, pjt+'.cnf')
-        pjtID = self.get_pjtID(pjt=pjt)
-        tbldir = self.drive.create_folder(title=table, parents=pjtID)
+        pjtcnf = os.path.normpath(os.path.join(self.cnfpath, pjt, pjt+'.cnf'))
 
         # add Table name to project.cnf --
         num_of_tables = ConfigManager().get_num_of_tables(pjtcnf=pjtcnf)
         key = 'table{}'.format(num_of_tables+1)
-        ConfigManager.write_value(file=pjtcnf, section='Table', key=key, value=table)
+        ConfigManager().write_value(file=pjtcnf, section='Table', key=key, value=table)
+
+        # create table directory --
+        pjtID = self.get_pjtID(pjt=pjt)
+        tbldir = self.drive.create_folder(title=table, parents=pjtID)
 
         # create Table info in project config file --
         dic = {'id': tbldir['id'], 'description': description}
         ConfigManager().write_section(file=pjtcnf, section=table, dic=dic)
+        pjtcnfID = ConfigManager().get_value(file=pjtcnf, section='Info', key='cnfid')
+        # -- upload
+        self.drive.upload_local_file(filepath=pjtcnf, id=pjtcnfID)
 
         # create Table config file --
         info = {'cnfid': '', 'project': pjt, 'table': table}
@@ -101,8 +119,11 @@ class n2db(object):
         tblcnf = ConfigManager().create_table_cnf(cnfpath=self.cnfpath, pjt=pjt, info=info, table=table)
         # -- upload to drive
         d_tblcnf = self.drive.create_file(title=table+'.cnf', mimeType='txt', parents=pjtID, content=tblcnf)
+        # -- add config-ID to local config
         ConfigManager().write_value(file=tblcnf, section='Info', key='cnfid', value=d_tblcnf['id'])
-        return
+        # -- re-upload
+        self.drive.upload_local_file(filepath=tblcnf, id=d_tblcnf['id'])
+        return d_tblcnf
 
     def CREATE_SHEET(self, table, monthid):
         # Search parent file ID
@@ -138,25 +159,26 @@ class n2db(object):
         :return:
         """
         t = datetime.strptime(date, '%Y-%m-%d')
+        year = str(t.year)
+        month = str(t.month)
         sheetname = '{}-{}'.format(table, t.strftime('%Y%m%d'))
 
-        # Check sheet existence and create sheet
+        # check sheet existence and create sheet
         # --------------------------------------
         # check sheet --
-        if not self.drive.exists(title=sheetname):
+        if self.drive.exists(title=sheetname) is False:
             # check month dir --
-            monthID = self.get_monthID(pjt=pjt, table=table, year=t.year, month=t.month)
-            if not monthID:
+            monthID = self.get_monthID(pjt=pjt, table=table, year=year, month=month)
+            if monthID is None:
                 # check year dir --
-                yearID = self.get_yearID(pjt=pjt, table=table, year=t.year)
-                if not yearID:
-                    self.create_yeardir(pjt=pjt, table=table, year=t.year)
-                    pass
-                self.create_monthdir(pjt=pjt, table=table, year=t.year, month=t.month)
-                pass
+                yearID = self.get_yearID(pjt=pjt, table=table, year=year)
+                if yearID is None:
+                    self.create_yeardir(pjt=pjt, table=table, year=year)
+                monthID = self.create_monthdir(pjt=pjt, table=table, year=year, month=month)
             sheet = self.create_sheet(sheetname=sheetname, parents=monthID)
-            pass
-        else: sheet = self.drive.search(msg="title = '{}' and trashed=False".format(sheetname))
+        else:
+            sheet = self.drive.search(msg="title = '{}' and trashed=False".format(sheetname))[0]
+            # TODO!! If Multiple sheet ??
 
         # append data
         # -----------
@@ -175,29 +197,35 @@ class n2db(object):
         monthdir = self.drive.create_folder(title=month, parents=yearID)
         # add file-ID to config file --
         file = os.path.join(self.cnfpath, pjt, table+'.cnf')
-        ConfigManager.write_value(file=file, section='Month', key='{}-{}'.format(year, month),
-                                  value=monthdir['id'], save=True)
+        tblcnfID = ConfigManager().get_value(file=file, section='Info', key='cnfid')
+        ConfigManager().write_value(file=file, section='Month', key='{}-{}'.format(year, month),
+                                    value=monthdir['id'], save=True)
+        # -- upload
+        self.drive.upload_local_file(filepath=file, id=tblcnfID)
         return monthdir['id']
 
     def create_yeardir(self, pjt, table, year):
         tableID = self.get_tableID(pjt=pjt, table=table)
+        print(tableID)
         yeardir = self.drive.create_folder(title=year, parents=tableID)
         # add file-ID to config file --
         file = os.path.join(self.cnfpath, pjt, table+'.cnf')
-        ConfigManager.write_value(file=file, section='Year', key=year, value=yeardir['id'], save=True)
+        tblcnfID = ConfigManager().get_value(file=file, section='Info', key='cnfid')
+        ConfigManager().write_value(file=file, section='Year', key=year, value=yeardir['id'], save=True)
+        # -- upload
+        self.drive.upload_local_file(filepath=file, id=tblcnfID)
         return yeardir['id']
 
     def get_sheetID(self, table, timestamp):
         msg = '"title={}-{}" and trashed=False'.format(table, timestamp)
         flist = self.drive.search(msg=msg)
 
-
     def get_monthID(self, pjt, table, year, month):
         file = os.path.join(self.cnfpath, pjt, table+'.cnf')
         # try to get monthID
         # ------------------
         try:
-            monthID = ConfigManager.get_value(file=file, section='Month', key='{}-{}'.format(year, month))
+            monthID = ConfigManager().get_value(file=file, section='Month', key='{}-{}'.format(year, month))
         except:
             monthID = None
         return monthID
@@ -207,17 +235,17 @@ class n2db(object):
         # try to get yearID
         # -----------------
         try:
-            yearID = ConfigManager.get_value(file=file, section='Year', key='{}'.format(year))
+            yearID = ConfigManager().get_value(file=file, section='Year', key='{}'.format(year))
         except:
             yearID = None
         return yearID
 
     def get_tableID(self, pjt, table):
-        file = os.path.join(self.cnfpath, pjt+'.cnf')
+        file = os.path.normpath(os.path.join(self.cnfpath, pjt, pjt+'.cnf'))
         # try to get table ID
         # -------------------
         try:
-            tableID = ConfigManager.get_value(file=file, section='{}', key='{id}'.format(table))
+            tableID = ConfigManager().get_value(file=file, section='{}'.format(table), key='id')
         except:
             tableID = None
         return tableID
@@ -227,11 +255,11 @@ class n2db(object):
         # try to get pjt ID
         # -----------------
         try:
-            pjtID = ConfigManager.get_value(file=file, section=pjt, key='id')
+            pjtID = ConfigManager().get_value(file=file, section=pjt, key='id')
         except:
-            print('================================'
-                  ' No such a Project : {}'
-                  '================================'.format(pjt))
+            print('================================\n'
+                  ' No such a Project : {}         \n'
+                  '================================\n'.format(pjt))
             pjtID = None
         return pjtID
 
@@ -254,7 +282,7 @@ class IndexManager(object):
         for ts in dtindex:
             date = ts.strftime('%Y-%m-%d')
             if not date in datelist: datelist.append(date)
-        return datelist
+        return datelist, dtindex
 
     def split_data(self, data):
         pass
@@ -313,25 +341,43 @@ class ConfigManager(object):
         keys = config.options(section='Table')
         return len(keys)
 
-    def create_pjt_cnf(self, cnfpath, pjt, info, table={}):
-        pjtdir = os.path.join(cnfpath, pjt)
-        if not os.path.isdir(pjtdir): os.mkdir(pjtdir)
-        file = pjtdir + '{}.cnf'.format(pjt)
+    def create_db_cnf(self, cnfpath, rootID):
+        dbcnf = os.path.normpath(os.path.join(cnfpath, 'n2db.cnf'))
         config = configparser.ConfigParser()
+        timestamp = time.strftime('%Y-%m-%d')
 
+        # contents --
+        info = {'cnfid': '',
+                'rootid': rootID,
+                'created': timestamp}
         # write contents --
         config['Info'] = info
-        config['Table'] = table
-
+        config['Project'] = {}
         # save file --
-        with open(file, 'w') as configfile:
+        with open(dbcnf, 'w') as configfile:
             config.write(configfile)
-        return file
+        return dbcnf
+
+    def create_pjt_cnf(self, cnfpath, pjt, info):
+        pjtpath = os.path.normpath(os.path.join(cnfpath, pjt))
+        # create Project directory --
+        try:
+            os.mkdir(pjtpath)
+        except FileExistsError:
+            pass
+        # create config file --
+        pjtcnf = os.path.normpath(os.path.join(pjtpath, '{}.cnf'.format(pjt)))
+        config = configparser.ConfigParser()
+        # write contents --
+        config['Info'] = info
+        config['Table'] = {}
+        # save file --
+        with open(pjtcnf, 'w') as configfile:
+            config.write(configfile)
+        return pjtcnf
 
     def create_table_cnf(self, cnfpath, pjt, table, info, year={}, month={}, column={}):
-        tbldir = os.path.join(cnfpath, pjt, table)
-        if not os.path.isdir(tbldir): os.mkdir(tbldir)
-        file = tbldir + '{}.cnf'.format(pjt)
+        tblcnf = os.path.normpath(os.path.join(cnfpath, pjt, '{}.cnf'.format(table)))
         config = configparser.ConfigParser()
 
         # write contents --
@@ -341,9 +387,9 @@ class ConfigManager(object):
         config['Column'] = column
 
         # save file --
-        with open(file, 'w') as configfile:
+        with open(tblcnf, 'w') as configfile:
             config.write(configfile)
-        return file
+        return tblcnf
 
 
 # History
