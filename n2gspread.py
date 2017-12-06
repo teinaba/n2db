@@ -5,6 +5,7 @@
 import gspread
 from oauth2client.file import Storage
 import numpy
+import pandas
 
 
 class n2gspread(object):
@@ -117,8 +118,20 @@ class n2gspread(object):
             csv_str += (ikuta + '\n')
         return csv_str
 
-    def load_data(self):
-        return
+    def get_all_values(self, wks):
+        """
+        Get all data in worksheet and return data as string list.
+        ---------------------------------------------------------
+
+        :param wks: < gspread.worksheet class instance >
+        :return strdata: < all data in worksheet : Type Str list>
+
+        Example data: strdata = [['2017-12-06 2:11:00', '2', '3', '4', '5', '6'],
+                                 ['2017-12-06 3:11:00', '2', '3', '4', '5', '6'],
+                                 ['2017-12-06 2:11:00', '2', '3', '4', '5', '6']]
+        """
+        strdata = wks.get_all_values()
+        return strdata
 
 
 def Authorize(json):
@@ -130,3 +143,5 @@ def Authorize(json):
 # -------
 # 2017/11/30 written by T.Inaba
 # 2017/12/04 T.Inaba: ver.0.1.1
+# 2017/12/05 T.Inaba: test operation.
+# 2017/12/06 T.Inaba: create get_all_value method.
