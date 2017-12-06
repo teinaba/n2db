@@ -23,7 +23,7 @@ class n2db(object):
         self.set_cnfpath()
         pass
 
-    def authorize(self, json):
+    def authorize(self, json='credentials.json', settings='settings.yaml'):
         """
         Set Authorized OAuth2.0 account.
         --------------------------------
@@ -31,10 +31,10 @@ class n2db(object):
         :param json: < json files to authorize : str : ex.) 'credentials.json'>
         :return:
         """
-        settings = os.path.join(self.abspath, 'settings.yaml')
-        json = os.path.join(self.abspath, 'credentials_n2db.json')
-        self.drive = n2gdrive.Authorize(settings=settings)
-        self.gs = n2gspread.Authorize(json=json)
+        settingsfile = os.path.join(self.abspath, settings)
+        jsonfile = os.path.join(self.abspath, json)
+        self.drive = n2gdrive.Authorize(settings=settingsfile)
+        self.gs = n2gspread.Authorize(json=jsonfile)
         return
 
     def set_abspath(self):
@@ -308,9 +308,6 @@ class IndexManager(object):
             date = ts.strftime('%Y-%m-%d')
             if not date in datelist: datelist.append(date)
         return datelist, dtindex
-
-    def split_data(self, data):
-        pass
 
     def timestamp_to_date(self, timestamp):
         t = datetime.strptime(timestamp, self.timestamp_fmt)
