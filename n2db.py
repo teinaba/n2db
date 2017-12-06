@@ -12,7 +12,6 @@ import configparser
 from datetime import datetime
 
 
-
 class n2db(object):
     gs = None
     drive = None
@@ -25,6 +24,12 @@ class n2db(object):
         pass
 
     def authorize(self, json):
+        """
+        Set Authorized OAuth2.0 account.
+
+        :param json:
+        :return:
+        """
         self.drive = n2gdrive.Authorize()
         self.gs = n2gspread.Authorize(json=json)
         return
@@ -59,10 +64,74 @@ class n2db(object):
         for date in datelist:
             d = list(s[date])  # pandas.Series is not recognized as list(array).
             self.insert(pjt=pjt, table=table, date=date, data=d, wks_num=wks_num)
-        pass
-
-    def SELECT(self, table):
         return
+
+    def insert(self, pjt, table, date, data, wks_num=1):
+        """
+        Insert data to the sheet 'Table-yymmdd' according to timestamp.
+        It is not taken into account that if there are multiple dates in data-index.
+        ---------------------------------------------------------------------------
+
+        :param table: < Table name : str >
+        :param date: < timestamp of data : str : fmt = 'YYYY-mm-dd' >
+        :param data: < Monitor data : array (list??) >
+        :param wks_num: The number of worksheet to insert data.
+        :return:
+        """
+        t = datetime.strptime(date, '%Y-%m-%d')
+        year = str(t.year)
+        month = str(t.month)
+        sheettitle = '{}-{}'.format(table, t.strftime('%Y%m%d'))
+
+        # check sheet existence and create sheet
+        # --------------------------------------
+        # check sheet --
+        if self.drive.exists(title=sheettitle) is False:
+            # check month dir --
+            monthID = self.get_monthID(pjt=pjt, table=table, year=year, month=month)
+            if monthID is None:
+                # check year dir --
+                yearID = self.get_yearID(pjt=pjt, table=table, year=year)
+                if yearID is None:
+                    self.create_yeardir(pjt=pjt, table=table, year=year)
+                monthID = self.create_monthdir(pjt=pjt, table=table, year=year, month=month)
+            sheet = self.create_sheet(sheettitle=sheettitle, parents=monthID)
+        else:
+            sheet = self.drive.search(msg="title = '{}' and trashed=False".format(sheettitle))[0]
+            # TODO!! If Multiple sheet ??
+
+        # append data
+        # -----------
+        self.gs.append(sheet=sheet['id'], wks_num=wks_num, data=data)
+        return
+
+    def SELECT(self, table, start, end):
+        # get date list as DatetimeIndex --
+        datelist = pandas.date_range(start=start, end=end, freq='D')
+
+        # get data by date --
+        data = []
+        for t in datelist:
+            date = t.strftime('%Y%m%d')
+            daydata = self.select(table=table, date=date)
+            data.extend(daydata)
+        return data
+
+    def select(self, table, date, wks_num=1):
+        sheettitle = '{}-{}'.format(table, date)
+        sheet = self.drive.search(msg="title = '{}' and trashed=False".format(sheettitle))[0]
+
+        # if specified Spreadsheet doesn't exist.
+        # ---------------------------------------
+        if not sheet:
+            print('\n'
+                  ' No SpreadSheet: {}\n'.format(sheettitle))
+            return []
+        # ---------------------------------------
+
+        wks = self.gs.load(sheet=sheet['id'], wks_num=wks_num)
+        data = self.gs.get_all_values(wks=wks)
+        return data
 
     def CREATE_PROJECT(self, pjt):
         # set path and create project directory in drive --
@@ -146,45 +215,6 @@ class n2db(object):
     def DROP_TABLE(self, table):
         pass
 
-    def insert(self, pjt, table, date, data, wks_num=1):
-        """
-        Insert data to the sheet 'Table-yymmdd' according to timestamp.
-        It is not taken into account that if there are multiple dates in data-index.
-        ---------------------------------------------------------------------------
-
-        :param table: < Table name : str >
-        :param date: < timestamp of data : str : fmt = 'YYYY-mm-dd' >
-        :param data: < Monitor data : array (list??) >
-        :param wks_num: The number of worksheet to insert data.
-        :return:
-        """
-        t = datetime.strptime(date, '%Y-%m-%d')
-        year = str(t.year)
-        month = str(t.month)
-        sheetname = '{}-{}'.format(table, t.strftime('%Y%m%d'))
-
-        # check sheet existence and create sheet
-        # --------------------------------------
-        # check sheet --
-        if self.drive.exists(title=sheetname) is False:
-            # check month dir --
-            monthID = self.get_monthID(pjt=pjt, table=table, year=year, month=month)
-            if monthID is None:
-                # check year dir --
-                yearID = self.get_yearID(pjt=pjt, table=table, year=year)
-                if yearID is None:
-                    self.create_yeardir(pjt=pjt, table=table, year=year)
-                monthID = self.create_monthdir(pjt=pjt, table=table, year=year, month=month)
-            sheet = self.create_sheet(sheetname=sheetname, parents=monthID)
-        else:
-            sheet = self.drive.search(msg="title = '{}' and trashed=False".format(sheetname))[0]
-            # TODO!! If Multiple sheet ??
-
-        # append data
-        # -----------
-        self.gs.append(sheet=sheet['id'], wks_num=wks_num, data=data)
-        pass
-
     def update_cnf(self, file):
         cnfid = ConfigManager.get_value(file=file, section='Info', key='cnfid')
         self.drive.upload_local_file(id=cnfid, filepath=file)
@@ -263,8 +293,8 @@ class n2db(object):
             pjtID = None
         return pjtID
 
-    def create_sheet(self, sheetname, parents):
-        sheet = self.drive.create_file(title=sheetname, mimeType='sheet', parents=parents)
+    def create_sheet(self, sheettitle, parents):
+        sheet = self.drive.create_file(title=sheettitle, mimeType='sheet', parents=parents)
         return sheet
 
 
@@ -391,7 +421,7 @@ class ConfigManager(object):
             config.write(configfile)
         return tblcnf
 
-
 # History
 # -------
 # 2017/12/04 written by T.Inaba
+# 2017/12/05 T.Inaba: test operation.
