@@ -9,12 +9,12 @@ from pydrive.drive import GoogleDrive
 class n2gdrive(object):
     drive = None
 
-    def __init__(self):
-        self.authorize()
+    def __init__(self, settings='settings.yaml'):
+        self.authorize(settings=settings)
         pass
 
-    def authorize(self):
-        gauth = GoogleAuth()
+    def authorize(self, settings='settings.yaml'):
+        gauth = GoogleAuth(settings_file=settings)
         gauth.LocalWebserverAuth()
         self.drive = GoogleDrive(gauth)
         pass
@@ -154,8 +154,8 @@ class MimeTypeIdentifier(object):
         else: key = mimeType
         return key
 
-def Authorize():
-    drive = n2gdrive()
+def Authorize(settings='settings.yaml'):
+    drive = n2gdrive(settings)
     return drive
 
 
@@ -164,3 +164,5 @@ def Authorize():
 # 2017/11/30 written by T.Inaba
 # 2017/12/02 T.Inaba : Add "upload_local_file" method.
 # 2017/12/04 T.Inaba: ver.0.1.1
+# 2017/12/05 T.Inaba: test operation.
+# 2017/12/05 T.Inaba: modified keyword of authorize.

@@ -11,11 +11,11 @@ import pandas
 class n2gspread(object):
     gs = None
 
-    def __init__(self, json):
+    def __init__(self, json='credentials.json'):
         self.authorize(json=json)
         pass
 
-    def authorize(self, json=None):
+    def authorize(self, json='credentials.json'):
         """
         Authorize with json file.
         -------------------------
@@ -134,7 +134,7 @@ class n2gspread(object):
         return strdata
 
 
-def Authorize(json):
+def Authorize(json='credentials.json'):
     gs = n2gspread(json=json)
     return gs
 
@@ -144,4 +144,4 @@ def Authorize(json):
 # 2017/11/30 written by T.Inaba
 # 2017/12/04 T.Inaba: ver.0.1.1
 # 2017/12/05 T.Inaba: test operation.
-# 2017/12/06 T.Inaba: create get_all_value method.
+# 2017/12/06 T.Inaba: create get_all_value method. modified keyword of authorize.

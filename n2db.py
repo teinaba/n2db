@@ -26,16 +26,19 @@ class n2db(object):
     def authorize(self, json):
         """
         Set Authorized OAuth2.0 account.
+        --------------------------------
 
-        :param json:
+        :param json: < json files to authorize : str : ex.) 'credentials.json'>
         :return:
         """
-        self.drive = n2gdrive.Authorize()
+        settings = os.path.join(self.abspath, 'settings.yaml')
+        json = os.path.join(self.abspath, 'credentials_n2db.json')
+        self.drive = n2gdrive.Authorize(settings=settings)
         self.gs = n2gspread.Authorize(json=json)
         return
 
     def set_abspath(self):
-        abspath = os.path.dirname(os.path.abspath(__name__))
+        abspath = os.path.dirname(os.path.abspath(__file__))
         self.abspath = abspath
         return
 
@@ -134,9 +137,10 @@ class n2db(object):
         return data
 
     def CREATE_PROJECT(self, pjt):
-        # set path and create project directory in drive --
+        # set path --
         dbcnf = os.path.join(self.cnfpath, 'n2db.cnf')
         rootID = ConfigManager().get_value(file=dbcnf, section='Info', key='rootid')
+        # create project directory in drive
         pjtdir = self.drive.create_folder(title=pjt, parents=rootID)
 
         # add Project name to n2db.cnf --
@@ -193,15 +197,6 @@ class n2db(object):
         # -- re-upload
         self.drive.upload_local_file(filepath=tblcnf, id=d_tblcnf['id'])
         return d_tblcnf
-
-    def CREATE_SHEET(self, table, monthid):
-        # Search parent file ID
-        # ---------------------
-
-
-        # Create sheet
-        # ------------
-        self.drive.create_file()
 
     def SHOW_CREATE_TABLE(self, table):
         pass
@@ -323,7 +318,6 @@ class IndexManager(object):
         return date, t
 
 
-
 class ConfigManager(object):
 
     def __init__(self):
@@ -425,3 +419,4 @@ class ConfigManager(object):
 # -------
 # 2017/12/04 written by T.Inaba
 # 2017/12/05 T.Inaba: test operation.
+# 2017/12/06 T.Inaba: create SELECT method. modified set_abspath and authorize.
