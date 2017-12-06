@@ -71,7 +71,7 @@ def mkdir_gene(geneID):
 # Main
 # ----
 def run():
-    # creat database directory @drive --
+    # create database directory @drive --
     rootID = mkdir_root()
     print('\nCREATE FOLDER @Drive: NECST_FILE_IO\n'
           '    ID: {}\n'.format(rootID))
@@ -110,6 +110,9 @@ def run():
     tblcnf = db.CREATE_TABLE(pjt='NASCORX', table='SIS', description='THIS-is-Test-Program')
     print('\nCREATE TABLE: {}\n'
           '    FOLDER ID: {}\n'.format(tblcnf['title'], tblcnf['id']))
+    tblcnf2 = db.CREATE_TABLE(pjt='NASCORX', table='Amb', description='THIS-is-Test-Program')
+    print('\nCREATE TABLE: {}\n'
+          '    FOLDER ID: {}\n'.format(tblcnf2['title'], tblcnf2['id']))
     # -- Telescope
     pjtcnf2 = db.CREATE_PROJECT(pjt='Telescope')
     print('\nCREATE PROJECT: {}\n'
@@ -117,8 +120,6 @@ def run():
     tblcnf2 = db.CREATE_TABLE(pjt='Telescope', table='AzEl', description='AzEl')
     print('\nCREATE TABLE: {}\n'
           '    FOLDER ID: {}\n'.format(tblcnf2['title'], tblcnf2['id']))
-
-    # create year direcrory --
 
 
     print('\n\n-- FINISH INSTALL --')
