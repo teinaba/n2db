@@ -35,7 +35,7 @@ while True:
         ikuta.append(timestamp)
         ikuta.extend(temp)
         data.append(ikuta)
-        print(data)
+        print(ikuta)
         # wait for next measurement
 
     # upload to DB
