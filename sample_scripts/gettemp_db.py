@@ -35,10 +35,10 @@ while True:
         ikuta.append(timestamp)
         ikuta.extend(temp)
         data.append(ikuta)
+        print(data)
         # wait for next measurement
 
     # upload to DB
-    print(data)
     print(time.strftime('%Y-%m-%d %H:%M:%S'))
     db.refresh()
     db.INSERT(pjt='NASCORX', table='Amb', data=data)
