@@ -37,6 +37,16 @@ class n2db(object):
         self.gs = n2gspread.Authorize(json=jsonfile)
         return
 
+    def refresh(self):
+        """
+        refresh access token.
+        ---------------------
+
+        :return:
+        """
+        self.gs.login()
+        return
+
     def set_abspath(self):
         abspath = os.path.dirname(os.path.abspath(__file__))
         self.abspath = abspath
@@ -231,7 +241,6 @@ class n2db(object):
 
     def create_yeardir(self, pjt, table, year):
         tableID = self.get_tableID(pjt=pjt, table=table)
-        print(tableID)
         yeardir = self.drive.create_folder(title=year, parents=tableID)
         # add file-ID to config file --
         file = os.path.join(self.cnfpath, pjt, table+'.cnf')

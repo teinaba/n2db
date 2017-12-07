@@ -27,6 +27,10 @@ class n2gspread(object):
         self.gs = gspread.authorize(credentials)
         return
 
+    def login(self):
+        self.gs.login()
+        return
+
     def load(self, sheet, wks_num=1):
         """
         Get gspread.worksheet class instance from 'file-ID' and 'the number of worksheet'.
