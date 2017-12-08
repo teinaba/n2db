@@ -44,6 +44,27 @@ class n2gspread(object):
         return wks
 
     def append_rows(self, wks, data, nrow):
+        ref_row = wks.row_count
+        wks.add_rows(nrow)
+        data_width = len(data[0])
+
+        # check data width --
+        if wks.col_count < data_width:
+            wks.resize(cols=data_width)
+            pass
+
+        # append  data --
+        cell_list = wks.range(ref_row+1, 1, ref_row+nrow, data_width)
+        for row in range(nrow):
+            for col, value in enumerate(data[row], start=0):
+                num = data_width * row + col
+                cell = cell_list[num]
+                cell.value = value
+                cell_list[num] = cell
+        wks.update_cells(cell_list=cell_list)
+        return
+
+    def append_rows_old(self, wks, data, nrow):
         """
         Append rows to end of the worksheet.
         ------------------------------------
@@ -136,6 +157,8 @@ class n2gspread(object):
         """
         strdata = wks.get_all_values()
         return strdata
+
+
 
 
 def Authorize(json='credentials.json'):
