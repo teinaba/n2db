@@ -39,12 +39,12 @@ class n2db(object):
 
     def refresh(self):
         """
-        refresh access token.
+        Refresh access token.
         ---------------------
 
         :return:
         """
-        self.gs.login()
+        self.gs.refresh()
         return
 
     def set_abspath(self):
