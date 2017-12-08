@@ -40,7 +40,8 @@ class n2gspread(object):
         """
         http = httplib2.Http()
         self.gs.auth.refresh(http)
-        return self.gs
+        self.gs.session.add_header('Authorization', "Bearer " + self.gs.auth.access_token)
+        return
 
     def load(self, sheet, wks_num=1):
         """
