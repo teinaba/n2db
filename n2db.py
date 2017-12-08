@@ -49,7 +49,7 @@ class n2db(object):
         :return:
         """
         self.drive = n2gdrive.Authorize(settings=self.settingsfile)
-        self.gs = self.gs.refresh()
+        self.gs.refresh()
         return
 
     def set_abspath(self):
