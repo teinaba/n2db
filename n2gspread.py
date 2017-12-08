@@ -6,7 +6,7 @@ import gspread
 from oauth2client.file import Storage
 import numpy
 import pandas
-
+import httplib2
 
 class n2gspread(object):
     gs = None
@@ -29,6 +29,17 @@ class n2gspread(object):
 
     def login(self):
         self.gs.login()
+        return
+
+    def refresh(self):
+        """
+        Refresh access_token.
+        ---------------------
+
+        :return:
+        """
+        http = httplib2.Http()
+        self.gs.auth.refresh(http)
         return
 
     def load(self, sheet, wks_num=1):
