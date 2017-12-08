@@ -40,7 +40,7 @@ class n2gspread(object):
         """
         http = httplib2.Http()
         self.gs.auth.refresh(http)
-        return
+        return self.gs
 
     def load(self, sheet, wks_num=1):
         """

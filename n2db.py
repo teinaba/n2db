@@ -17,6 +17,8 @@ class n2db(object):
     drive = None
     abspath = None
     cnfpath = None
+    jsonfile = None
+    settingsfile = None
 
     def __init__(self):
         self.set_abspath()
@@ -31,10 +33,12 @@ class n2db(object):
         :param json: < json files to authorize : str : ex.) 'credentials.json'>
         :return:
         """
-        settingsfile = os.path.join(self.abspath, settings)
-        jsonfile = os.path.join(self.abspath, json)
-        self.drive = n2gdrive.Authorize(settings=settingsfile)
-        self.gs = n2gspread.Authorize(json=jsonfile)
+        # set files --
+        self.jsonfile = os.path.join(self.abspath, json)
+        self.settingsfile = os.path.join(self.abspath, settings)
+        # authorize --
+        self.gs = n2gspread.Authorize(json=self.jsonfile)
+        self.drive = n2gdrive.Authorize(settings=self.settingsfile)
         return
 
     def refresh(self):
@@ -44,7 +48,8 @@ class n2db(object):
 
         :return:
         """
-        self.gs.refresh()
+        self.drive = n2gdrive.Authorize(settings=self.settingsfile)
+        self.gs = self.gs.refresh()
         return
 
     def set_abspath(self):
