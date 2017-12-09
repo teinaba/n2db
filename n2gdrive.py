@@ -7,6 +7,7 @@ from pydrive.drive import GoogleDrive
 
 
 class n2gdrive(object):
+    gauth = None
     drive = None
 
     def __init__(self, settings='settings.yaml'):
@@ -14,9 +15,9 @@ class n2gdrive(object):
         pass
 
     def authorize(self, settings='settings.yaml'):
-        gauth = GoogleAuth(settings_file=settings)
-        gauth.LocalWebserverAuth()
-        self.drive = GoogleDrive(gauth)
+        self.gauth = GoogleAuth(settings_file=settings)
+        self.gauth.LocalWebserverAuth()
+        self.drive = GoogleDrive(self.gauth)
         pass
 
     def file(self, id):

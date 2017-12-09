@@ -11,8 +11,7 @@ import httplib2
 class n2gspread(object):
     gs = None
 
-    def __init__(self, json='credentials.json'):
-        self.authorize(json=json)
+    def __init__(self):
         pass
 
     def authorize(self, json='credentials.json'):
@@ -25,6 +24,10 @@ class n2gspread(object):
         """
         credentials = Storage(json).get()
         self.gs = gspread.authorize(credentials)
+        return
+
+    def authorize2(self, credentials):
+        self.gs = gspread.authorize(credentials=credentials)
         return
 
     def login(self):
@@ -42,6 +45,7 @@ class n2gspread(object):
         self.gs.auth.refresh(http)
         self.gs.session.add_header('Authorization', "Bearer " + self.gs.auth.access_token)
         return
+
 
     def load(self, sheet, wks_num=1):
         """
@@ -172,9 +176,14 @@ class n2gspread(object):
 
 
 
-
 def Authorize(json='credentials.json'):
-    gs = n2gspread(json=json)
+    gs = n2gspread()
+    gs.authorize(json=json)
+    return gs
+
+def Authorize2(credentials):
+    gs = n2gspread()
+    gs.authorize2(credentials=credentials)
     return gs
 
 

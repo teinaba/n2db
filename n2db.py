@@ -41,6 +41,14 @@ class n2db(object):
         self.drive = n2gdrive.Authorize(settings=self.settingsfile)
         return
 
+    def authorize2(self, settings='settings.yaml'):
+        # set files --
+        self.settingsfile = os.path.join(self.abspath, settings)
+        # authorize --
+        self.drive = n2gdrive.Authorize(settings=self.settingsfile)
+        self.gs = n2gspread.Authorize2(credentials=self.drive.gauth.credentials)
+        return
+
     def refresh(self):
         """
         Refresh access token.
