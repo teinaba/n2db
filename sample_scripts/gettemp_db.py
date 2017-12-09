@@ -7,7 +7,7 @@ sys.path.append(os.pardir)
 # だからこう書かないとダメっぽい
 import n2db
 db = n2db.n2db.n2db()
-db.authorize(json='credentials_n2db.json')
+db.authorize2()
 
 import NASCORX_System
 IP1 = '192.168.100.104'
@@ -40,7 +40,7 @@ while True:
 
     # upload to DB
     print(time.strftime('%Y-%m-%d %H:%M:%S'))
-    db.refresh()
+    db.authorize2()
     db.INSERT(pjt='NASCORX', table='Amb', data=data)
     print(time.strftime('%Y-%m-%d %H:%M:%S'))
     print('INSERT')
