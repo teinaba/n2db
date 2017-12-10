@@ -56,20 +56,25 @@ class n2gspread(object):
         :param wks_num: < the number of worksheet : int >
         :return: < wks : gspread.worksheet class instance >
         """
+        self.login()
         wks = self.gs.open_by_key(key=sheet).get_worksheet(index=wks_num-1)
         return wks
 
     def append_rows(self, wks, data, nrow):
         ref_row = wks.row_count
+        self.login()
         wks.add_rows(nrow)
         data_width = len(data[0])
 
         # check data width --
+        self.login()
         if wks.col_count < data_width:
+            self.login()
             wks.resize(cols=data_width)
             pass
 
         # append  data --
+        self.login()
         cell_list = wks.range(ref_row+1, 1, ref_row+nrow, data_width)
         for row in range(nrow):
             for col, value in enumerate(data[row], start=0):
@@ -77,6 +82,7 @@ class n2gspread(object):
                 cell = cell_list[num]
                 cell.value = value
                 cell_list[num] = cell
+        self.login()
         wks.update_cells(cell_list=cell_list)
         return
 
@@ -109,9 +115,11 @@ class n2gspread(object):
         blank = self.blank_check(wks)
         if blank:
             dcsv = self.array_to_csvstr(data=data)
+            self.login()
             self.gs.import_csv(file_id=sheet, data=dcsv)
             # refresh token. without this, RequestError is caused. --
             wks = self.load(sheet=sheet, wks_num=wks_num)
+            self.login()
             wks.resize(rows=nrow)
         else:
             self.append_rows(wks=wks, data=data, nrow=nrow)
@@ -131,14 +139,9 @@ class n2gspread(object):
         :param wks: < gspread.worksheet class instance >
         :return blank: < Blank file or not : True or False >
         """
+        self.login()
         cell_A1 = wks.acell('A1')
         if cell_A1.value == '': blank = True
-        else: blank = False
-        return blank
-
-    def blank_check2(self, wks, row, col):
-        values = wks.row_values(row=row)  # TODO: row-1 ??
-        if values == [None]*col: blank = True
         else: blank = False
         return blank
 
