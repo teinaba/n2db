@@ -26,7 +26,7 @@ def get_temp():
 
 while True:
     data = []
-    for i in range(10):
+    for i in range(200):
         time.sleep(5)
         ikuta = []
         # get data
