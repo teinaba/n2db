@@ -13,7 +13,7 @@ from n2db import n2gdrive
 
 drive = n2gdrive.Authorize()
 db = n2database.N2db()
-db.authorize(json='credentials_n2db.json')
+db.authorize()
 
 
 # Functions
