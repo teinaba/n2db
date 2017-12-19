@@ -25,23 +25,14 @@ class N2db(object):
         self.set_cnfpath()
         pass
 
-    def authorize(self, json='credentials.json', settings='settings.yaml'):
+    def authorize(self, settings='settings.yaml'):
         """
         Set Authorized OAuth2.0 account.
         --------------------------------
 
-        :param json: < json files to authorize : str : ex.) 'credentials.json'>
+        :param settings: < taml file name : str : ex.) 'settings.yaml' : path is not necessary >
         :return:
         """
-        # set files --
-        self.jsonfile = os.path.join(self.abspath, json)
-        self.settingsfile = os.path.join(self.abspath, settings)
-        # authorize --
-        self.gs = n2gspread.Authorize(json=self.jsonfile)
-        self.drive = n2gdrive.Authorize(settings=self.settingsfile)
-        return
-
-    def authorize2(self, settings='settings.yaml'):
         # set files --
         self.settingsfile = os.path.join(self.abspath, settings)
         # authorize --
@@ -241,7 +232,7 @@ class N2db(object):
     def create_monthdir(self, pjt, table, year, month):
         yearID = self.get_yearID(pjt=pjt, table=table, year=year)
         if yearID is None:
-            yearID = self.create_yeardir()
+            yearID = self.create_yeardir(pjt=pjt, table=table, year=year)
         monthdir = self.drive.create_folder(title=month, parents=yearID)
         # add file-ID to config file --
         file = os.path.join(self.cnfpath, pjt, table+'.cnf')
