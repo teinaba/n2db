@@ -3,8 +3,8 @@
 # import modules
 # --------------
 import os
-from . import n2database
-from . import n2gdrive
+import n2database
+import n2gdrive
 
 
 drive = n2gdrive.Authorize()
