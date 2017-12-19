@@ -2,8 +2,8 @@
 
 # import modules
 # --------------
-import n2gdrive
-import n2gspread
+from . import n2gdrive
+from . import n2gspread
 import os
 import time
 import numpy
@@ -294,6 +294,9 @@ class n2db(object):
         try:
             tableID = ConfigManager().get_value(file=file, section='{}'.format(table), key='id')
         except:
+            print('================================\n'
+                  ' No such a Table : {}           \n'
+                  '================================\n'.format(table))
             tableID = None
         return tableID
 
