@@ -5,8 +5,8 @@ sys.path.append(os.pardir)
 
 # NASCO-FACはNASCORX_System-masterまでpath通ってる.
 # だからこう書かないとダメっぽい
-import n2db
-db = n2db.n2db.n2db()
+from n2db import n2database
+db = n2database.N2db()
 db.authorize2()
 
 import NASCORX_System

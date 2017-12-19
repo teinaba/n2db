@@ -3,9 +3,10 @@
 # import modules
 # --------------
 import os
-import n2database
-import n2gdrive
-
+import sys
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from n2db import n2database
+from n2db import n2gdrive
 
 drive = n2gdrive.Authorize()
 db = n2database.N2db()
