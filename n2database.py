@@ -12,7 +12,7 @@ import configparser
 from datetime import datetime
 
 
-class n2db(object):
+class N2db(object):
     gs = None
     drive = None
     abspath = None

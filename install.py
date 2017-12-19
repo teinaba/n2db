@@ -3,12 +3,12 @@
 # import modules
 # --------------
 import os
-import n2db
-import n2gdrive
+from . import n2database
+from . import n2gdrive
 
 
 drive = n2gdrive.Authorize()
-db = n2db.n2db()
+db = n2database.N2db()
 db.authorize(json='credentials_n2db.json')
 
 
@@ -21,7 +21,7 @@ def mkdir_root():
 
     :return: Folder id of 'NECST_FILE_IO'
     """
-    root = drive.create_folder(title='NECST_FILE_IO', parents=None)
+    root = drive.create_folder(title='NECST_FILE_IO_Test', parents=None)
     return root['id']
 
 def mkdir_monitor(rootID):
@@ -90,7 +90,7 @@ def run():
           '    PATH: {}\n'.format(cnfpath))
 
     # create database config @local --
-    dbcnf = n2db.ConfigManager().create_db_cnf(cnfpath=cnfpath, rootID=monID)
+    dbcnf = n2database.ConfigManager().create_db_cnf(cnfpath=cnfpath, rootID=monID)
     print('\nCREATE FILE @Local: DataBase config\n'
           '    FILE: {}\n'.format(dbcnf))
     # -- upload to drive
@@ -99,7 +99,7 @@ def run():
           '    Parents: {}\n'
           '    FOLDER ID: {}\n'.format(d_dbcnf['parents'][0]['id'], d_dbcnf['id']))
     # -- add config-ID to config file
-    n2db.ConfigManager().write_value(file=dbcnf, section='Info', key='cnfid', value=d_dbcnf['id'])
+    n2database.ConfigManager().write_value(file=dbcnf, section='Info', key='cnfid', value=d_dbcnf['id'])
     drive.upload_local_file(filepath=dbcnf, id=d_dbcnf['id'])
 
     # create project --

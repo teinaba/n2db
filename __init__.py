@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-from . import n2db
+from . import n2database
 from . import n2gdrive
 from . import n2gspread
 
