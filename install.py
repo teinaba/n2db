@@ -4,7 +4,10 @@
 # --------------
 import os
 import sys
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+here = os.path.dirname(os.path.abspath(__file__))
+path = os.path.normpath(os.path.join(here, '../'))
+sys.path.append(path)
+
 from n2db import n2database
 from n2db import n2gdrive
 
